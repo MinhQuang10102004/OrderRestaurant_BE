@@ -1,0 +1,21 @@
+
+> start
+> nest start
+
+file:///C:/Users/ACER/OneDrive%20-%20mzr3/Desktop/Bodo/Hoc/Congcu/Project/OrderRestaurant/Backend/dist/src/common/prisma/generated/prisma/client.js:38
+Object.defineProperty(exports, "__esModule", { value: true });
+                      ^
+
+ReferenceError: exports is not defined
+    at file:///C:/Users/ACER/OneDrive%20-%20mzr3/Desktop/Bodo/Hoc/Congcu/Project/OrderRestaurant/Backend/dist/src/common/prisma/generated/prisma/client.js:38:23
+    at ModuleJobSync.runSync (node:internal/modules/esm/module_job:395:35)
+    at ModuleLoader.importSyncForRequire (node:internal/modules/esm/loader:360:47)
+    at loadESMFromCJS (node:internal/modules/cjs/loader:1385:24)
+    at Module._compile (node:internal/modules/cjs/loader:1536:5)
+    at Object..js (node:internal/modules/cjs/loader:1706:10)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+
+Node.js v22.14.0

@@ -1,0 +1,15 @@
+import * as Prisma from './internal/prismaNamespaceBrowser.js';
+export { Prisma };
+export * as $Enums from './enums.js';
+export * from './enums.js';
+export type Role = Prisma.RoleModel;
+export type User = Prisma.UserModel;
+export type Category = Prisma.CategoryModel;
+export type Dish = Prisma.DishModel;
+export type Area = Prisma.AreaModel;
+export type Table = Prisma.TableModel;
+export type Order = Prisma.OrderModel;
+export type OrderItem = Prisma.OrderItemModel;
+export type Payment = Prisma.PaymentModel;
+export type Voucher = Prisma.VoucherModel;
+export type LoyaltyPoint = Prisma.LoyaltyPointModel;
