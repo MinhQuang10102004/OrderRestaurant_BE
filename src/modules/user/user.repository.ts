@@ -3,22 +3,30 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
 export class UserRepository {
-  private readonly prisma = new PrismaService();
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
     return this.prisma.user.findMany();
   }
 
   async findById(id: bigint) {
-    return this.prisma.user.findUnique({ where: { id } });
+    return this.prisma.user.findUnique({ where: { id }, include: { role: true } });
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    return this.prisma.user.findUnique({ where: { email }, include: { role: true } });
+  }
+
+  async findByPhone(phone: string) {
+    return this.prisma.user.findUnique({ where: { phone } });
+  }
+
+  async findRoleByName(name: string) {
+    return this.prisma.role.findFirst({ where: { name } });
   }
 
   async create(data: any) {
-    return this.prisma.user.create({ data });
+    return this.prisma.user.create({ data, include: { role: true } });
   }
 
   async update(id: bigint, data: any) {

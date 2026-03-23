@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
@@ -9,9 +10,23 @@ import { TableModule } from './modules/table/table.module';
 import { AreaModule } from './modules/area/area.module';
 import { OrderModule } from './modules/order/order.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { PrismaModule } from './common/prisma/prisma.module';
 
 @Module({
-  imports: [UserModule, AuthModule, CategoryModule, DishModule, TableModule, AreaModule, OrderModule, PaymentModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Loads .env automatically globally
+    }),
+    PrismaModule,
+    UserModule,
+    AuthModule,
+    CategoryModule,
+    DishModule,
+    TableModule,
+    AreaModule,
+    OrderModule,
+    PaymentModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

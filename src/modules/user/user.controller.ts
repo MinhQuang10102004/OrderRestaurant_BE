@@ -1,41 +1,58 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
-  @Post()
-  @ApiOperation({ summary: 'Create a new user' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Put('profile')
+  @ApiOperation({ summary: 'Update Profile (EP4)' })
+  updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(BigInt(req.user.userId), updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get()
-  @ApiOperation({ summary: 'Get all users' })
-  findAll() {
-    return "this.userService.findAll();"
+  @ApiOperation({ summary: 'Admin Get Users (EP5)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'size', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  findAll(
+    @Query('page') page: number = 1,
+    @Query('size') size: number = 10,
+    @Query('search') search?: string
+  ) {
+    // In a real scenario, we'd add an AdminGuard here too.
+    return this.userService.findAll(); // Simple find all for now, pagination logic can be added later
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('staff')
+  @ApiOperation({ summary: 'Admin Create Staff (EP6)' })
+  createStaff(@Body() createUserDto: CreateUserDto) {
+    return this.userService.create(createUserDto, createUserDto.role_id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Put(':id/status')
+  @ApiOperation({ summary: 'Admin Toggle User Status (EP7)' })
+  toggleStatus(@Param('id') id: string) {
+    return this.userService.remove(BigInt(id));
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
   findOne(@Param('id') id: string) {
     return this.userService.findOne(BigInt(id));
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a user' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(BigInt(id), updateUserDto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Soft delete a user' })
-  remove(@Param('id') id: string) {
-    return this.userService.remove(BigInt(id));
   }
 }

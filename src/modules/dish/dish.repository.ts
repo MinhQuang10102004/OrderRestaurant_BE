@@ -3,7 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Injectable()
 export class DishRepository {
-  private readonly prisma = new PrismaService();
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll() {
     return this.prisma.dish.findMany({ include: { category: true } });
