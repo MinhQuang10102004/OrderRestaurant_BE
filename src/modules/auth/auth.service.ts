@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,19 +12,34 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  async register(registerDto: RegisterDto) {
+    const role = await this.userService.findRoleByName('CUSTOMER');
+    if (!role) {
+      throw new BadRequestException('Role CUSTOMER not found');
+    }
+    
+    const user = await this.userService.create(registerDto, role.id);
+    
+    return {
+      id: user.id.toString(),
+      full_name: user.full_name,
+      email: user.email,
+      role: role.name
+    };
+  }
+
   async login(loginDto: LoginDto) {
-    // In UserService we need direct access to repository to find by email
     const user = await this.userService.findByEmail(loginDto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.deleted_at) {
+      throw new UnauthorizedException('Account locked');
+    }
+
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-    
-    // For now if passwords aren't hashed, we may need to compare plain text,
-    // assuming we update the register to hash passwords.
-    // if (loginDto.password !== user.password) {
-    if (!isPasswordValid && loginDto.password !== user.password) {
+    if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -31,12 +47,24 @@ export class AuthService {
     
     return {
       access_token: this.jwtService.sign(payload),
+      token_type: 'Bearer',
       user: {
         id: user.id.toString(),
-        email: user.email,
         full_name: user.full_name,
-        role_id: user.role_id.toString()
+        role: user.role?.name || 'UNKNOWN'
       }
+    };
+  }
+
+  async getProfile(userId: bigint) {
+    const user = await this.userService.findOne(userId);
+    return {
+      id: user.id.toString(),
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role?.name,
+      points: user.points
     };
   }
 }
