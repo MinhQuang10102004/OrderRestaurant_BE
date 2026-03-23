@@ -13,7 +13,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Put('profile')
-  @ApiOperation({ summary: 'Update Profile (EP4)' })
+  @ApiOperation({ summary: 'Update Profile (EP4) ' })
   updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(BigInt(req.user.userId), updateUserDto);
   }
