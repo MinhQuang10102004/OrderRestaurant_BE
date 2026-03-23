@@ -6,7 +6,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "postbuild": "robocopy src\\generated dist\\src\\generated /E /NFL /NDL /NJH /NJS /nc /ns /np || exit /b 0",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
