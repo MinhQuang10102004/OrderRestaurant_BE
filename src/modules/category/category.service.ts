@@ -18,7 +18,7 @@ export class CategoryService {
   async findOne(id: bigint) {
     const category = await this.categoryRepository.findById(id);
     if (!category) {
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException('Danh mục không tồn tại');
     }
     return category;
   }

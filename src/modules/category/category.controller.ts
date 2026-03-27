@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -13,19 +22,19 @@ export class CategoryController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new category (Admin/Staff)' })
+  @ApiOperation({ summary: 'Tạo danh mục mới(Admin/Staff)' })
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all categories' })
+  @ApiOperation({ summary: 'Lấy tất cả danh mục' })
   findAll() {
     return this.categoryService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a category by ID' })
+  @ApiOperation({ summary: 'Lấy danh mục theo ID' })
   findOne(@Param('id') id: string) {
     return this.categoryService.findOne(BigInt(id));
   }
@@ -33,15 +42,18 @@ export class CategoryController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a category (Admin/Staff)' })
-  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
+  @ApiOperation({ summary: 'Cập nhật danh mục(Admin/Staff)' })
+  update(
+    @Param('id') id: string,
+    @Body() updateCategoryDto: UpdateCategoryDto,
+  ) {
     return this.categoryService.update(BigInt(id), updateCategoryDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Soft delete a category (Admin)' })
+  @ApiOperation({ summary: 'Soft delete danh mục(Admin)' })
   remove(@Param('id') id: string) {
     return this.categoryService.remove(BigInt(id));
   }
