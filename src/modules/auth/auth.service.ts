@@ -16,11 +16,21 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  private issueRefreshToken(payload: { sub: string; email: string; role_id: string }) {
+  private getRefreshSecret() {
+    return (
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey'
+    );
+  }
+
+  private issueRefreshToken(payload: {
+    sub: string;
+    email: string;
+    role_id: string;
+  }) {
     return this.jwtService.sign(
       { ...payload, token_type: 'refresh' },
       {
-        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'secretKey',
+        secret: this.getRefreshSecret(),
         expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') as any,
       },
     );
@@ -67,6 +77,47 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       refresh_token: this.issueRefreshToken(payload),
+      token_type: 'Bearer',
+      user: {
+        id: user.id.toString(),
+        full_name: user.full_name,
+        role: user.role?.name || 'UNKNOWN',
+      },
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Missing refresh token');
+    }
+
+    let payload: any;
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.getRefreshSecret(),
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (payload?.token_type !== 'refresh') {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = await this.userService.findOne(BigInt(payload.sub));
+    if (user.deleted_at) {
+      throw new UnauthorizedException('Account locked');
+    }
+
+    const newPayload = {
+      sub: user.id.toString(),
+      email: user.email,
+      role_id: user.role_id.toString(),
+    };
+
+    return {
+      access_token: this.jwtService.sign(newPayload),
+      refresh_token: this.issueRefreshToken(newPayload),
       token_type: 'Bearer',
       user: {
         id: user.id.toString(),
