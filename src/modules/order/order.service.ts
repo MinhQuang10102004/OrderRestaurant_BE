@@ -6,6 +6,7 @@ import {
 import { OrderRepository } from './order.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderStatus } from '../../generated/prisma/client';
 
 @Injectable()
 export class OrderService {
@@ -22,7 +23,7 @@ export class OrderService {
           dish_id: item.dish_id,
           quantity: item.quantity,
           price_at_order: item.price_at_order,
-          status: 'PENDING',
+          status: OrderStatus.PENDING,
         })),
       },
     };
@@ -71,7 +72,7 @@ export class OrderService {
       table_number: item.order.table?.table_number || 'N/A',
       notes: item.notes,
       status: item.status,
-      created_at: item.created_at,
+      created_at: item.order.created_at,
     }));
 
     return {
@@ -92,13 +93,13 @@ export class OrderService {
       );
     }
 
-    // 1. Cập nhật trạng thái item sang COOKING
-    await this.orderRepository.updateOrderItemStatus(itemId, 'COOKING');
+    // 1. Cập nhật trạng thái item sang PREPARING
+    await this.orderRepository.updateOrderItemStatus(itemId, OrderStatus.PREPARING);
 
-    // 2. Nếu đơn hàng đang ở trạng thái PENDING, chuyển sang PROCESSING
+    // 2. Nếu đơn hàng đang ở trạng thái PENDING, chuyển sang PREPARING
     const order = await this.orderRepository.findById(item.order_id);
     if (order && order.status === 'PENDING') {
-      await this.orderRepository.update(item.order_id, { status: 'PROCESSING' });
+      await this.orderRepository.update(item.order_id, { status: OrderStatus.PREPARING });
     }
 
     return {
@@ -112,19 +113,23 @@ export class OrderService {
       throw new NotFoundException('Order item not found');
     }
 
-    if (item.status !== 'COOKING') {
-      throw new Error('Món ăn phải ở trạng thái đang chế biến (COOKING) mới có thể hoàn thành.');
+    if (item.status !== 'PREPARING') {
+      throw new BadRequestException(
+        'Món ăn phải ở trạng thái đang chế biến (PREPARING) mới có thể hoàn thành.',
+      );
     }
 
-    // 1. Cập nhật trạng thái item sang DONE
-    await this.orderRepository.updateOrderItemStatus(itemId, 'DONE');
+    // 1. Cập nhật trạng thái item sang READY
+    await this.orderRepository.updateOrderItemStatus(itemId, OrderStatus.READY);
 
-    // 2. Kiểm tra nếu tất cả items trong đơn đã DONE
-    const unfinishedCount = await this.orderRepository.countUnfinishedItems(item.order_id);
+    // 2. Kiểm tra nếu tất cả items trong đơn đã READY
+    const unfinishedCount = await this.orderRepository.countUnfinishedItems(
+      item.order_id,
+    );
 
     if (unfinishedCount === 0) {
       // 3. Cập nhật orders.status sang READY
-      await this.orderRepository.update(item.order_id, { status: 'READY' });
+      await this.orderRepository.update(item.order_id, { status: OrderStatus.READY });
     }
 
     // TODO: Gửi thông báo đến nhân viên phục vụ qua Socket/Notification
@@ -136,7 +141,9 @@ export class OrderService {
 
   async update(id: bigint, updateOrderDto: UpdateOrderDto) {
     await this.findOne(id);
-    return this.orderRepository.update(id, updateOrderDto);
+    const { items, ...data } = updateOrderDto;
+    void items;
+    return this.orderRepository.update(id, data);
   }
 
   async remove(id: bigint) {
