@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PaymentRepository } from './payment.repository';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -76,7 +77,54 @@ export class PaymentService {
   }
 
   async create(createPaymentDto: CreatePaymentDto) {
-    return this.paymentRepository.create(createPaymentDto);
+    const rawPayload = createPaymentDto as unknown as Record<string, unknown>;
+    const rawOrderId = rawPayload.order_id ?? rawPayload.orderId;
+    const orderIdNumber = Number(rawOrderId);
+
+    if (!Number.isInteger(orderIdNumber) || orderIdNumber <= 0) {
+      throw new BadRequestException('order_id (or orderId) is invalid');
+    }
+
+    const amountNumber = Number(rawPayload.amount);
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+      throw new BadRequestException('amount is invalid');
+    }
+
+    const method = String(rawPayload.method ?? '').toUpperCase();
+    if (!method) {
+      throw new BadRequestException('method is required');
+    }
+
+    const status = String(rawPayload.status ?? 'SUCCESS').toUpperCase();
+    const transactionId = rawPayload.transaction_id
+      ? String(rawPayload.transaction_id)
+      : undefined;
+
+    try {
+      return await this.paymentRepository.create({
+        order_id: BigInt(orderIdNumber),
+        amount: new Prisma.Decimal(amountNumber).toDecimalPlaces(2),
+        method,
+        status,
+        transaction_id: transactionId,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Payment already exists for this order');
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException('order_id does not exist');
+      }
+
+      throw error;
+    }
   }
 
   async findAll() {
